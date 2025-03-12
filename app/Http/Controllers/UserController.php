@@ -25,15 +25,6 @@ class UserController extends Controller
                 'email' => $record['email'],
                 'password' => Hash::make($record['password']),
             ]);
-            $roles = explode(';', $record['roles']);
-            $roles = array_map('trim', $roles);
-
-            foreach ($roles as $roleName) {
-                $role = Role::where('name', $roleName)->first();
-                if ($role) {
-                    $user->roles()->attach($role->id);
-                }
-            }
         }
 
         return response()->json(['message' => 'Users uploaded successfully'], 200);
