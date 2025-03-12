@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +24,8 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $user->assignRole('default');
 
-        return response()->json(['message' => 'User was registered'], 201);
+        return response()->json(['message' => 'User was registered', 'user_id' => $user->id], 201);
     }
 
     public function login(Request $request) {
