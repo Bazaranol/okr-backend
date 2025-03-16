@@ -18,6 +18,15 @@ class SkipController extends Controller
         return response()->json(['data' => $skips]);
     }
 
+    public function delete(Request $request) {
+        $request->validate([
+            'skip_id' => 'required'
+        ]);
+        Skip::where('id', $request->input('skip_id'))->delete();
+
+        return response()->json(['data' => 'Skip was deleted'], 200);
+    }
+
     public function store(SkipRequest $request){
         $documentPath = null;
         if ($request->hasFile('document')) {
