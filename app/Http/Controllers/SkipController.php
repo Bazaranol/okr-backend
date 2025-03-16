@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SkipRequest;
 use App\Models\Skip;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use League\Csv\Writer;
@@ -16,22 +18,16 @@ class SkipController extends Controller
         return response()->json(['data' => $skips]);
     }
 
-    public function store(Request $request){
-        $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'document' => 'required|file|mimes:pdf,docx,doc|max:2048',
-        ]);
-
+    public function store(SkipRequest $request){
         $documentPath = null;
-        if($request->hasFile('document')){
+        if ($request->hasFile('document')) {
             $documentPath = $request->file('document')->store('documents', 'public');
         }
 
         $skip = Skip::create([
             'user_id' => Auth::user()->id,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'start_date' => Carbon::createFromFormat('d.m.Y', $request->start_date)->format('Y-m-d'),
+            'end_date' => Carbon::createFromFormat('d.m.Y', $request->end_date)->format('Y-m-d'),
             'document_path' => $documentPath,
         ]);
 
