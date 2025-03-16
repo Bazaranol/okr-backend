@@ -10,6 +10,43 @@ use League\Csv\Reader;
 
 class UserController extends Controller
 {
+    public function index(Request $request) {
+        $query = User::with(['roles', 'skips' => function($q) {
+            $q->where('status', 'approved');
+        }]);
+
+        if ($request->has('role')) {
+            $role = $request->role;
+            $query->whereHas('roles', function($q) use ($role) {
+                $q->where('name', $role);
+            });
+        }
+
+        if ($request->has('group')) {
+            $group = $request->group;
+            $query->whereHas('group', function($q) use ($group) {
+                $q->where('group_number', $group);
+            });
+        }
+
+        $users = $query->paginate(10);
+
+        $users->getCollection()->transform(function($user) {
+            $user->approved_skips_count = $user->skips->count();
+            return $user;
+        });
+
+        return response()->json([
+            'data' => $users->items(),
+            'pagination' => [
+                'total' => $users->total(),
+                'per_page' => $users->perPage(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+            ]
+        ], 200);
+    }
+
     public function uploadCsv(Request $request) {
         $request->validate([
             'file' => 'required|file|mimes:csv,txt',
@@ -45,5 +82,10 @@ class UserController extends Controller
 
 
         return response()->json(['message' => 'Role ' . $request->role_name . ' added to user with id:' . $request->user_id], 201);
+    }
+
+    public function changeRoles(Request $request) {
+
+
     }
 }

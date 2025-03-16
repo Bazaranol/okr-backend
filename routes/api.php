@@ -25,4 +25,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/skips/{skip}/extensions', [\App\Http\Controllers\SkipExtensionController::class, 'store']);
 
     Route::get('skips/export', [\App\Http\Controllers\SkipController::class, 'exportSkipsToCsv']);
+
+    Route::get('users', [\App\Http\Controllers\UserController::class, 'index']);
 });
