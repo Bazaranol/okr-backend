@@ -38,9 +38,18 @@ class User extends Authenticatable
     {
         return $this->roles()->where('name', $role)->exists();
     }
-
+// для массива мб изменить
+//    public function hasRole($roles)
+//    {
+//        return $this->roles()->whereIn('name', (array) $roles)->exists();
+//    }
     public function skips()
     {
         return $this->hasMany(Skip::class);
     }
+
+//    public function groups()
+//    {
+//        return $this->HasOne(Group::class);
+//    }
 }

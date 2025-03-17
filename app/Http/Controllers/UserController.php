@@ -88,4 +88,17 @@ class UserController extends Controller
 
 
     }
+
+    public function addToGroup(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'group_number' => 'required|exists:groups,group_number',
+        ]);
+
+        $user = User::find($request->user_id);
+        $user->groups()->attach($request->group_number);
+
+        return response()->json(['message' => 'User added to group.'], 201);
+    }
 }

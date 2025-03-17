@@ -27,4 +27,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('skips/export', [\App\Http\Controllers\SkipController::class, 'exportSkipsToCsv']);
 
     Route::get('users', [\App\Http\Controllers\UserController::class, 'index']);
+    Route::post('users/add-to-group', [\App\Http\Controllers\UserController::class, 'addToGroup']);
+
+    Route::post('groups/create', [\App\Http\Controllers\GroupController::class, 'store']);
+
 });

@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Group;
+use App\Models\User;
+use Illuminate\Http\Request;
+
+class GroupController extends Controller
+{
+    public function index(Request $request){
+        $groups = Group::all();
+
+        return response()->json($groups);
+    }
+
+    public function store(Request $request) {
+        $request->validate([
+            'group_number' => 'required|integer|unique:groups,group_number',
+            'course' => 'required|integer',
+        ]);
+
+        Group::create([
+            'group_number'=> $request->input('group_number'),
+            'course' => $request->input('course'),
+        ]);
+
+        return response()->json(['message' => 'Group created.'], 201);
+    }
+}
