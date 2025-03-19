@@ -50,4 +50,15 @@ class UserObserver
     {
         //
     }
+
+    public function updating(User $user) {
+        if ($user->isDirty('roles')) {
+            $oldRoles = $user->getOriginal('roles');
+            $newRoles = $user->roles;
+
+            if ($oldRoles->contains('name', 'student') && !$newRoles->contains('name', 'student')) {
+                $user->group_id = null;
+            }
+        }
+    }
 }
