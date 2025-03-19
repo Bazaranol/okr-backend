@@ -19,12 +19,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('group_user', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('group_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('group_id')->references('group_number')->on('groups')->onDelete('cascade');
-            $table->primary(['user_id', 'group_id']);
+        Schema::table('users', function (Blueprint $table) {
+            $table->unsignedBigInteger('group_id')->nullable()->after('id');
+            $table->foreign('group_id')->references('id')->on('groups')->onDelete('set null');
         });
     }
 
@@ -34,6 +31,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('groups');
-        Schema::dropIfExists('group_user');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('group_id');
+        });
     }
 };

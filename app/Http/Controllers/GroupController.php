@@ -27,4 +27,18 @@ class GroupController extends Controller
 
         return response()->json(['message' => 'Group created.'], 201);
     }
+
+    public function getGroupUsers(Request $request)
+    {
+        $request->validate([
+            'group_number' => 'required|exists:groups,group_number',
+        ]);
+
+        $group = Group::where('group_number', $request->group_number)->first();
+        $users = $group->users;
+
+        return response()->json(['data' => $users], 200);
+    }
+
+
 }

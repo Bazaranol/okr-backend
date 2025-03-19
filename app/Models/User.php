@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -12,7 +13,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'group_id'
     ];
 
     protected $hidden = [
@@ -34,22 +35,21 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class);
     }
 
+    public function group() {
+        return $this->belongTo(Group::class, 'group_id');
+    }
+
     public function hasRole($role)
     {
+        if (is_array($role)) {
+            return $this->roles()->whereIn('name', $role)->exists();
+        }
         return $this->roles()->where('name', $role)->exists();
     }
-// для массива мб изменить
-//    public function hasRole($roles)
-//    {
-//        return $this->roles()->whereIn('name', (array) $roles)->exists();
-//    }
+
     public function skips()
     {
         return $this->hasMany(Skip::class);
     }
 
-//    public function groups()
-//    {
-//        return $this->HasOne(Group::class);
-//    }
 }

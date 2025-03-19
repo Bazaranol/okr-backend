@@ -27,8 +27,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('skips/export', [\App\Http\Controllers\SkipController::class, 'exportSkipsToCsv']);
 
     Route::get('users', [\App\Http\Controllers\UserController::class, 'index']);
-    Route::post('users/add-to-group', [\App\Http\Controllers\UserController::class, 'addToGroup']);
 
+    Route::middleware([\App\Http\Middleware\RoleMiddleware::class . ':dean,admin'])->group(function () {
+        Route::post('users/add-to-group', [\App\Http\Controllers\UserController::class, 'addToGroup']);
+        Route::post('users/remove-from-group', [\App\Http\Controllers\UserController::class, 'removeFromGroup']);
+    });
+
+    Route::get('groups/all', [\App\Http\Controllers\GroupController::class, 'index']);
+    Route::get('groups/get-group-users', [\App\Http\Controllers\GroupController::class, 'getGroupUsers']);
     Route::post('groups/create', [\App\Http\Controllers\GroupController::class, 'store']);
 
 });

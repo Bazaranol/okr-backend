@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -96,9 +97,39 @@ class UserController extends Controller
             'group_number' => 'required|exists:groups,group_number',
         ]);
 
+        if (!auth()->user()->can('addToGroup', Group::class)) {
+            return response()->json(['message' => 'You need to be admin or dean to add user to a group.'], 403);
+        }
+
         $user = User::find($request->user_id);
-        $user->groups()->attach($request->group_number);
+        if (!$user->hasRole('student')) {
+            return response()->json(['message' => 'User must have a student role to be added to a group.'], 403);
+        }
+
+        $group = Group::where('group_number', $request->group_number)->first();
+
+        $user->group_id = $group->id;
+        $user->save();
 
         return response()->json(['message' => 'User added to group.'], 201);
+    }
+
+
+    public function removeFromGroup(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        if (!auth()->user()->can('removeFromGroup', Group::class)) {
+            return response()->json(['message' => 'You must have an admin or dean role to remove users from a group.'], 403);
+        }
+
+        $user = User::find($request->user_id);
+
+        $user->group_id = null;
+        $user->save();
+
+        return response()->json(['message' => 'User removed from group'], 200);
     }
 }
