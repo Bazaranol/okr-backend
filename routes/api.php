@@ -22,6 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('skips')->group(function () {
         Route::get('/', [\App\Http\Controllers\SkipController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\SkipController::class, 'store']);
+        Route::get('/my', [\App\Http\Controllers\SkipController::class, 'getMySkips']);
+
+        Route::get('/{skip}', [\App\Http\Controllers\SkipController::class, 'getByIdSkip']);
         Route::post('/{skip}/status', [\App\Http\Controllers\SkipController::class, 'updateStatus']);
         Route::post('/{skip}/extend', [\App\Http\Controllers\SkipController::class, 'extend']);
         Route::get('/export', [\App\Http\Controllers\SkipController::class, 'exportSkipsToCsv']);

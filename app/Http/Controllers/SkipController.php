@@ -143,4 +143,29 @@ class SkipController extends Controller
         $csv->output('skips.csv');
         exit;
     }
+
+    public function getByIdSkip($skipId) {
+        $user = auth()->user();
+
+        $skip = Skip::with('user')->find($skipId);
+        if (!$skip) {
+            return response()->json(['message' => 'Skip is not found.'], 404);
+        }
+        if ($user->hasRole(['admin', 'dean', 'teacher'])) {
+            return response()->json(['data' => $skip], 200);
+        } elseif ($user->hasRole('student')) {
+            if ($skip->user_id === $user->id) {
+                return response()->json(['data' => $skip], 200);
+            } else {
+                return response()->json(['message' => 'Access is forbidden.'], 403);
+            }
+        } else {
+            return response()->json(['message' => 'Access is forbidden.'], 403);
+        }
+    }
+
+    public function getMySkips() {
+        $user = Auth::user();
+        return response()->json(['data' => $user->skips()->get()], 200);
+    }
 }

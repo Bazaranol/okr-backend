@@ -12,9 +12,12 @@ use League\Csv\Reader;
 class UserController extends Controller
 {
     public function index(Request $request) {
-        $query = User::with(['roles', 'skips' => function($q) {
-            $q->where('status', 'approved');
-        }]);
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        $query = User::with(['roles' => function($q) {
+            $q->select('name');
+        }, 'skips']);
 
         if ($request->has('role')) {
             $role = $request->role;
@@ -30,10 +33,19 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(10);
+        $users = $query->paginate($perPage, ['*'], 'page', $page);
 
         $users->getCollection()->transform(function($user) {
-            $user->approved_skips_count = $user->skips->count();
+            $user->skips_count = $user->skips->count();
+            $user->makeHidden('skips');
+            $user->roles->each(function($role) {
+                $role->makeHidden('pivot');
+            });
+
+            $user->roles = $user->roles->map(function($role) {
+                return ['name' => $role->name];
+            })->toArray();
+
             return $user;
         });
 
