@@ -59,7 +59,7 @@ class UserController extends Controller
 
         foreach ($csv as $record) {
             $user = User::create([
-                'name' => $record['name'],
+                'fullName' => $record['fullName'],
                 'email' => $record['email'],
                 'password' => Hash::make($record['password']),
             ]);
@@ -69,6 +69,10 @@ class UserController extends Controller
     }
 
     public function addRole(Request $request) {
+        if (!auth()->user()->hasRole(['admin', 'dean'])) {
+            return response()->json(['message' => 'Access is forbidden.'], 403);
+        }
+
         $request->validate([
             'user_id' => 'required',
             'role_name' => 'required',
@@ -86,8 +90,27 @@ class UserController extends Controller
     }
 
     public function changeRoles(Request $request) {
+        if (!auth()->user()->hasRole(['admin', 'dean'])) {
+            return response()->json(['message' => 'Access is forbidden.'], 403);
+        }
 
+        $request->validate([
+            'user_id' => 'required|exists:users, id',
+            'roles' => 'required|array',
+            'roles.*' => 'string|exists:roles,name'
+        ]);
 
+        $user = User::find($request->user_id);
+        if (!$user) {
+            return response()->json(['message' => 'User is not found'], 404);
+        }
+
+        $user->roles()->detach();
+
+        $roles = Role::whereIn('name', $request->roles)->pluck('id');
+        $user->roles()->attach($roles);
+
+        return response()->json(['message' => 'Roles for that user was updated'], 200);
     }
 
     public function addToGroup(Request $request)

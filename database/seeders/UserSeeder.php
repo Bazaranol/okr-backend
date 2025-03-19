@@ -18,19 +18,25 @@ class UserSeeder extends Seeder
 
         $users = [
             [
-                'name' => 'admin',
+                'fullName' => 'admin',
                 'email' => 'admin@admin.com',
                 'password' => Hash::make('admin'),
                 'roles' => ['admin', 'dean'],
             ],
             [
-                'name' => 'dean',
+                'fullName' => 'dean',
                 'email' => 'dean@dean.com',
                 'password' => Hash::make('dean'),
                 'roles' => ['dean'],
             ],
             [
-                'name' => 'student',
+                'fullName' => 'teacher',
+                'email' => 'teacher@teacher.com',
+                'password' => Hash::make('teacher'),
+                'roles' => ['teacher'],
+            ],
+            [
+                'fullName' => 'student',
                 'email' => 'student@student.com',
                 'password' => Hash::make('student'),
                 'roles' => null
@@ -39,9 +45,9 @@ class UserSeeder extends Seeder
 
         foreach ($users as $userData) {
             $user = User::create([
-                'name' => $userData['name'],
+                'fullName' => $userData['fullName'],
                 'email' => $userData['email'],
-                'password' => $userData['name'],
+                'password' => $userData['password'],
             ]);
             if ($userData['roles']){
                 foreach ($userData['roles'] as $roleName){

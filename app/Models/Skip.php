@@ -9,13 +9,10 @@ class Skip extends Model
 {
     protected $table = 'skips';
 
-    protected $fillable = ['user_id', 'start_date', 'end_date', 'status', 'document_path'];
+    protected $fillable = ['user_id', 'start_date', 'end_date', 'status', 'document_path', 'is_extended'];
 
     public function user() {
         return $this->belongsTo(User::class);
     }
 
-    public function extensions() {
-        return $this->hasMany(SkipExtension::class);
-    }
 }
