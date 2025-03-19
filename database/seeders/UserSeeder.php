@@ -30,6 +30,12 @@ class UserSeeder extends Seeder
                 'roles' => ['dean'],
             ],
             [
+                'name' => 'teacher',
+                'email' => 'teacher@teacher.com',
+                'password' => Hash::make('teacher'),
+                'roles' => ['teacher'],
+            ],
+            [
                 'name' => 'student',
                 'email' => 'student@student.com',
                 'password' => Hash::make('student'),
