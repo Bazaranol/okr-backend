@@ -13,6 +13,8 @@ Route::post('/register', [\App\Http\Controllers\AuthController::class, 'register
 Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout']);
+
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update']);
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'get']);
     Route::post('/upload-csv', [\App\Http\Controllers\UserController::class, 'uploadCsv']);
