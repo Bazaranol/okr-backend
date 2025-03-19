@@ -12,9 +12,12 @@ use League\Csv\Reader;
 class UserController extends Controller
 {
     public function index(Request $request) {
-        $query = User::with(['roles', 'skips' => function($q) {
-            $q->where('status', 'approved');
-        }]);
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        $query = User::with(['roles' => function($q) {
+            $q->select('name');
+        }, 'skips']);
 
         if ($request->has('role')) {
             $role = $request->role;
@@ -30,10 +33,19 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(10);
+        $users = $query->paginate($perPage, ['*'], 'page', $page);
 
         $users->getCollection()->transform(function($user) {
-            $user->approved_skips_count = $user->skips->count();
+            $user->skips_count = $user->skips->count();
+            $user->makeHidden('skips');
+            $user->roles->each(function($role) {
+                $role->makeHidden('pivot');
+            });
+
+            $user->roles = $user->roles->map(function($role) {
+                return ['name' => $role->name];
+            })->toArray();
+
             return $user;
         });
 
@@ -97,7 +109,8 @@ class UserController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users, id',
             'roles' => 'required|array',
-            'roles.*' => 'string|exists:roles,name'
+            'roles.*' => 'string|exists:roles,name',
+            'group_number' => 'sometimes|string|exists:groups,group_number'
         ]);
 
         $user = User::find($request->user_id);
@@ -109,6 +122,15 @@ class UserController extends Controller
 
         $roles = Role::whereIn('name', $request->roles)->pluck('id');
         $user->roles()->attach($roles);
+
+        if ($request->has('group_number')) {
+            if ($user->hasRole('student')) {
+                $group = Group::where('group_number', $request->group_number)->first();
+                $user->group_id = $group->id;
+                $user->save();
+            }
+            else return response()->json(['message' => 'Roles for that user was updated. But group was not added'], 200);
+        }
 
         return response()->json(['message' => 'Roles for that user was updated'], 200);
     }
