@@ -109,7 +109,8 @@ class UserController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users, id',
             'roles' => 'required|array',
-            'roles.*' => 'string|exists:roles,name'
+            'roles.*' => 'string|exists:roles,name',
+            'group_number' => 'sometimes|string|exists:groups,group_number'
         ]);
 
         $user = User::find($request->user_id);
@@ -121,6 +122,15 @@ class UserController extends Controller
 
         $roles = Role::whereIn('name', $request->roles)->pluck('id');
         $user->roles()->attach($roles);
+
+        if ($request->has('group_number')) {
+            if ($user->hasRole('student')) {
+                $group = Group::where('group_number', $request->group_number)->first();
+                $user->group_id = $group->id;
+                $user->save();
+            }
+            else return response()->json(['message' => 'Roles for that user was updated. But group was not added'], 200);
+        }
 
         return response()->json(['message' => 'Roles for that user was updated'], 200);
     }
