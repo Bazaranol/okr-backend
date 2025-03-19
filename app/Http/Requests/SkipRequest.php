@@ -24,7 +24,8 @@ class SkipRequest extends FormRequest
         return [
             'start_date' => 'required|date|date_format:d.m.Y',
             'end_date' => 'required|date|date_format:d.m.Y|after:start_date',
-            'document' => 'nullable|file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:2048',
+            'documents' => 'nullable|array',
+            'documents.*' => 'file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:2048',
         ];
     }
     public function messages(): array
@@ -37,9 +38,10 @@ class SkipRequest extends FormRequest
             'end_date.date' => 'Поле "Дата окончания" должно быть датой.',
             'end_date.date_format' => 'Поле "Дата окончания" должно быть в формате дд.мм.гггг.',
             'end_date.after' => 'Поле "Дата окончания" должно быть после даты начала.',
-            'document.file' => 'Поле "Документ" должно быть файлом.',
-            'document.mimetypes' => 'Файл должен быть одного из типов: text/plain, PDF, DOC, DOCX.',
-            'document.max' => 'Файл не должен превышать 2048 КБ.',
+            'document.array' => 'Поле "Документы" должно быть массивом файлов.',
+            'document.*.file' => 'Поле "Документ" должно быть файлом.',
+            'document.*.mimetypes' => 'Файл должен быть одного из типов: text/plain, PDF, DOC, DOCX.',
+            'document.*.max' => 'Файл не должен превышать 2048 КБ.',
         ];
     }
 

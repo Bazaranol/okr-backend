@@ -66,16 +66,18 @@ class SkipController extends Controller
     }
 
     public function store(SkipRequest $request){
-        $documentPath = null;
-        if ($request->hasFile('document')) {
-            $documentPath = $request->file('document')->store('documents', 'public');
+        $documentPaths = [];
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $documentPaths[] = $file->store('documents', 'public');
+            }
         }
 
         $skip = Skip::create([
             'user_id' => Auth::user()->id,
             'start_date' => Carbon::createFromFormat('d.m.Y', $request->start_date)->format('Y-m-d'),
             'end_date' => Carbon::createFromFormat('d.m.Y', $request->end_date)->format('Y-m-d'),
-            'document_path' => $documentPath,
+            'document_paths' => $documentPaths,
         ]);
 
         return response()->json(['message' => 'Skip was created!', 'data' => $skip], 201);
@@ -88,19 +90,22 @@ class SkipController extends Controller
 
         $request->validate([
             'new_end_date' => 'nullable|date|date_format:d.m.Y|after:today',
-            'document' => 'nullable|file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:2048',
+            'documents' => 'nullable|array',
+            'documents.*' => 'file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:2048',
         ]);
 
-        $documentPath = null;
-        if ($request->hasFile('document')) {
-            $documentPath = $request->file('document')->store('documents', 'public');
+        $documentPaths = $skip->document_paths ?? [];
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $documentPaths[] = $file->store('documents', 'public');
+            }
         }
 
         $skip->update([
             'end_date' => $request->new_end_date ? Carbon::createFromFormat('d.m.Y', $request->new_end_date)->format('Y-m-d') : null,
             'status' => 'pending',
             'is_extended' => true,
-            'document_path' => $documentPath
+            'document_paths' => $documentPaths
         ]);
 
         return response()->json([
@@ -127,7 +132,7 @@ class SkipController extends Controller
         $skips = Skip::with('user')->get();
 
         $csv = Writer::createFromFileObject(new SplTempFileObject());
-        $csv->insertOne(['ID', 'User ID', 'User name', 'From', 'To', 'Document Path']);
+        $csv->insertOne(['ID', 'User ID', 'User name', 'From', 'To', 'Document Paths']);
 
         foreach ($skips as $skip) {
             $csv->insertOne([
@@ -136,7 +141,7 @@ class SkipController extends Controller
                 $skip->user->name,
                 $skip->start_date,
                 $skip->end_date,
-                $skip->document_path,
+                $skip->document_paths,
             ]);
         }
 
