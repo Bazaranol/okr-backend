@@ -30,6 +30,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware([\App\Http\Middleware\RoleMiddleware::class . ':dean,admin'])->group(function () {
         Route::post('/roles-add', [\App\Http\Controllers\UserController::class, 'addRole']);
+        Route::post('/roles-change', [\App\Http\Controllers\UserController::class, 'changeRoles']);
+
         Route::post('/users/add-to-group', [\App\Http\Controllers\UserController::class, 'addToGroup']);
         Route::post('/users/remove-from-group', [\App\Http\Controllers\UserController::class, 'removeFromGroup']);
     });
