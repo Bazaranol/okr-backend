@@ -12,10 +12,48 @@ use SplTempFileObject;
 
 class SkipController extends Controller
 {
-    public function index() {
-        $skips = Skip::with('user')->get();
+    public function index(Request $request) {
+        if (!auth()->user()->hasRole(['admin', 'dean'])) {
+            return response()->json(['message' => 'Access is forbidden.'], 403);
+        }
 
-        return response()->json(['data' => $skips]);
+        $query = Skip::with('user');
+
+        if ($request->has('student_name')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->student_name . '%');
+            });
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('date')) {
+            $date = Carbon::createFromFormat('d.m.Y', $request->date)->format('Y-m-d');
+            $query->where('start_date', '<=', $date)
+                ->where(function ($q) use ($date) {
+                    $q->where('end_date', '>=', $date)
+                        ->orWhereNull('end_date'); // Бессрочные пропуски
+                });
+        }
+
+        if ($request->has('is_indefinite')) {
+            $query->whereNull('end_date');
+        }
+
+        $perPage = $request->input('per_page', 10);
+        $skips = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $skips->items(),
+            'pagination' => [
+                'total' => $skips->total(),
+                'per_page' => $skips->perPage(),
+                'current_page' => $skips->currentPage(),
+                'last_page' => $skips->lastPage(),
+            ],
+        ]);
     }
 
     public function delete(Request $request) {
@@ -43,7 +81,39 @@ class SkipController extends Controller
         return response()->json(['message' => 'Skip was created!', 'data' => $skip], 201);
     }
 
+    public function extend(Request $request, Skip $skip) {
+        if ($skip->status !== 'approved') {
+            return response()->json(['message' => 'Skip must be approved for extending'], 400);
+        }
+
+        $request->validate([
+            'new_end_date' => 'nullable|date|date_format:d.m.Y|after:today',
+            'document' => 'nullable|file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:2048',
+        ]);
+
+        $documentPath = null;
+        if ($request->hasFile('document')) {
+            $documentPath = $request->file('document')->store('documents', 'public');
+        }
+
+        $skip->update([
+            'end_date' => $request->new_end_date ? Carbon::createFromFormat('d.m.Y', $request->new_end_date)->format('Y-m-d') : null,
+            'status' => 'pending',
+            'is_extended' => true,
+            'document_path' => $documentPath
+        ]);
+
+        return response()->json([
+            'message' => 'Request foe extending was send',
+            'data' => $skip
+        ], 200);
+    }
+
     public function updateStatus(Request $request, Skip $skip){
+        if (!auth()->user()->hasRole(['admin', 'dean'])) {
+            return response()->json(['message' => 'Access is forbidden.'], 403);
+        }
+
         $request->validate([
             'status' => 'required|in:approved,rejected',
         ]);

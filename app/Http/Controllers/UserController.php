@@ -69,6 +69,10 @@ class UserController extends Controller
     }
 
     public function addRole(Request $request) {
+        if (!auth()->user()->hasRole(['admin', 'dean'])) {
+            return response()->json(['message' => 'Доступ запрещён.'], 403);
+        }
+
         $request->validate([
             'user_id' => 'required',
             'role_name' => 'required',
