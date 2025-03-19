@@ -1,0 +1,76 @@
+services:
+  sup-backend:
+    image: glekovkirillll/backend:latest
+    container_name: sup-backend
+    volumes:
+      - ./okr-backend:/var/www/html
+    ports:
+      - "8080:80"
+      - "8000:8000"
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=sup_db #mb need to change settings here
+      - DB_PORT=5432
+      - DB_DATABASE=sup_backend_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=17263544
+    depends_on:
+      - sup_db
+    command: ["sh", "-c", "composer install --no-dev --optimize-autoloader && php artisan migrate && php artisan serve --host=0.0.0.0"] #при первом запуске добавить после миграции --seed && php artisan key:generate
+    networks:
+      - sup-network
+
+  sup_db:
+    image: postgres:15
+    container_name: sup_db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 17263544
+      POSTGRES_USER: postgres
+      POSTGRES_DB: sup_backend_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - sup-network
+
+#  sup-client:
+#    image: node:20-bullseye
+#    stdin_open: true
+#    tty: true
+#    container_name: sup-client
+#    working_dir: /app
+#    volumes:
+#      - ./sup-client:/app
+#    ports:
+#      - "5173:5173"
+#    command: ["sh", "-c", "rm -rf node_modules package-lock.json && npm install && npm run dev -- --host"]
+#    networks:
+#      - sup-network
+#
+#  sup-mobile:
+#    build:
+#      context: .
+#      dockerfile: .\sup-mobile\mobile.dockerfile
+#    container_name: sup-mobile
+#    working_dir: /app
+#    volumes:
+#      - ./sup-mobile:/app
+#    ports:
+#      - "19000:19000" # Expo DevTools
+#      - "19001:19001" # Metro Bundler
+#      - "19002:19002" # Expo Web
+#    command: ["sh", "-c", "npm start"]
+#    environment:
+#      - NODE_ENV=development
+#    restart: on-failure
+#    networks:
+#      - sup-network
+
+volumes:
+  pgdata:
+
+networks:
+  sup-network:
+    driver: bridge
