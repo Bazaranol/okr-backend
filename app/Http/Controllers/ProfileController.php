@@ -40,13 +40,20 @@ class ProfileController extends Controller
         $user = Auth::user()->load('roles'); // Eager Loading
 
         $roles = $user->roles()->pluck('name');
+        $group = null;
+        if ($user->group_id !== null) {
+            $group = Group::where('id', $user->group_id)->first();
+        }
 
-        $group = Group::where('id', $user->group_id)->first();
-        return response()->json([
+        $response = [
             'fullName' => $user->fullName,
             'email' => $user->email,
             'roles' => $roles,
-            'group_name' => $group->group_number,
-        ], 200);
+        ];
+
+        if ($group !== null) {
+            $response['group_number'] = $group->group_number;
+        }
+        return response()->json($response, 200);
     }
 }
