@@ -107,7 +107,7 @@ class SkipController extends Controller
             'reason' => 'nullable|string',
         ]);
 
-        $documentPaths = $skip->document_paths ?? [];
+        $documentPaths = $skip->document_paths ? json_decode($skip->document_paths, true) : [];
         if ($request->hasFile('documents')) {
             foreach ($request->file('documents') as $file) {
                 $documentPaths[] = $file->store('documents', 'public');
@@ -125,7 +125,7 @@ class SkipController extends Controller
             'end_date' => $newEndDate,
             'status' => 'pending',
             'is_extended' => true,
-            'document_paths' => $documentPaths,
+            'document_paths' => json_encode($documentPaths),
             'reason' => $reason,
         ]);
 
