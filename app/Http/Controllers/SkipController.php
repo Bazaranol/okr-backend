@@ -7,6 +7,7 @@ use App\Models\Skip;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use League\Csv\Writer;
 use SplTempFileObject;
 
@@ -172,8 +173,20 @@ class SkipController extends Controller
             ]);
         }
 
-        $csv->output('skips.csv');
-        exit;
+        $fileName = 'skips_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        $filePath = 'public/documents/' . $fileName;
+
+        Storage::put($filePath, $csv->toString());
+
+        $fileUrl = Storage::url($filePath);
+
+        return response()->json([
+            'message' => 'CSV file has been generated and saved.',
+            'file_url' => $fileUrl,
+        ], 200);
+
+//        $csv->output('skips.csv');
+//        exit;
     }
 
     public function getByIdSkip($skipId) {
