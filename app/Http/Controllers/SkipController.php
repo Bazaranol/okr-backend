@@ -75,15 +75,15 @@ class SkipController extends Controller
                 }
             }
 
-            $reason = null;
-            if ($request->has('reason')) {
-                $reason = $request->input('reason');
-            }
+            $reason = $request->has('reason') ? $request->input('reason') : null;
+
+            $startDate = $this->parseDate($request->start_date);
+            $endDate = $this->parseDate($request->end_date);
 
             $skip = Skip::create([
                 'user_id' => Auth::user()->id,
-                'start_date' => Carbon::createFromFormat('d.m.Y', $request->start_date)->format('Y-m-d'),
-                'end_date' => Carbon::createFromFormat('d.m.Y', $request->end_date)->format('Y-m-d'),
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
                 'document_paths' => json_encode($documentPaths),
                 'reason' => $reason,
             ]);
@@ -100,9 +100,22 @@ class SkipController extends Controller
         }
 
         $request->validate([
-            'new_end_date' => 'nullable|date|date_format:d.m.Y|after:today',
+            'new_end_date' => [
+                'nullable',
+                'date',
+                function ($attribute, $value, $fail) {
+                    $formats = ['d.m.Y', 'Y-m-d'];
+                    foreach ($formats as $format) {
+                        if (Carbon::createFromFormat($format, $value) !== false) {
+                            return;
+                        }
+                    }
+                    $fail("Wrong format of date. Use d.m.Y or Y-m-d.");
+                },
+                'after:today',
+            ],
             'documents' => 'nullable|array',
-            'documents.*' => 'file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:2048',
+            'documents.*' => 'file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png|max:2048',
             'reason' => 'nullable|string',
         ]);
 
@@ -113,10 +126,15 @@ class SkipController extends Controller
             }
         }
 
-        $reason  = $request->has('reason') ?? null;
+        $reason = $request->has('reason') ? $request->input('reason') : null;
+
+        $newEndDate = null;
+        if ($request->new_end_date) {
+            $newEndDate = $this->parseDate($request->new_end_date)->format('Y-m-d');
+        }
 
         $skip->update([
-            'end_date' => $request->new_end_date ? Carbon::createFromFormat('d.m.Y', $request->new_end_date)->format('Y-m-d') : null,
+            'end_date' => $newEndDate,
             'status' => 'pending',
             'is_extended' => true,
             'document_paths' => $documentPaths,
@@ -124,7 +142,7 @@ class SkipController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Request foe extending was send',
+            'message' => 'Request for extending was sent',
             'data' => $skip
         ], 200);
     }
@@ -188,5 +206,24 @@ class SkipController extends Controller
     public function getMySkips() {
         $user = Auth::user();
         return response()->json(['data' => $user->skips()->get()], 200);
+    }
+
+    /**
+     * Парсит дату из строки с учётом нескольких форматов.
+     *
+     * @param string $date
+     * @return Carbon
+     * @throws \Exception
+     */
+    private function parseDate(string $date): Carbon
+    {
+        $formats = ['d.m.Y', 'Y-m-d'];
+        foreach ($formats as $format) {
+            $parsedDate = Carbon::createFromFormat($format, $date);
+            if ($parsedDate !== false) {
+                return $parsedDate;
+            }
+        }
+        throw new \Exception("Wrong format of date. Use d.m.Y or Y-m-d.");
     }
 }
