@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -13,13 +14,13 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'name' => 'sometimes|string|max:255',
+            'fullName' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:8',
         ]);
 
-        if ($request->has('name')) {
-            $user->name = $request->name;
+        if ($request->has('fullName')) {
+            $user->fullName = $request->fullName;
         }
 
         if ($request->has('email')) {
@@ -40,10 +41,12 @@ class ProfileController extends Controller
 
         $roles = $user->roles()->pluck('name');
 
+        $group = Group::where('id', $user->group_id)->first();
         return response()->json([
-            'name' => $user->name,
+            'fullName' => $user->fullName,
             'email' => $user->email,
             'roles' => $roles,
+            'group_name' => $group->group_number,
         ], 200);
     }
 }

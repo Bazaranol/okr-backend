@@ -17,12 +17,10 @@ class GroupController extends Controller
     public function store(Request $request) {
         $request->validate([
             'group_number' => 'required|integer|unique:groups,group_number',
-            'course' => 'required|integer',
         ]);
 
         Group::create([
             'group_number'=> $request->input('group_number'),
-            'course' => $request->input('course'),
         ]);
 
         return response()->json(['message' => 'Group created.'], 201);

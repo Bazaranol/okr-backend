@@ -19,6 +19,10 @@ class UserController extends Controller
             $q->select('name');
         }, 'skips']);
 
+        if ($request->has('fullName')) {
+            $query->where('fullName', 'like', '%' . $request->input('fullName') . '%');
+        }
+
         if ($request->has('role')) {
             $role = $request->role;
             $query->whereHas('roles', function($q) use ($role) {
@@ -107,10 +111,10 @@ class UserController extends Controller
         }
 
         $request->validate([
-            'user_id' => 'required|exists:users, id',
+            'user_id' => 'required|exists:users,id',
             'roles' => 'required|array',
             'roles.*' => 'string|exists:roles,name',
-            'group_number' => 'sometimes|string|exists:groups,group_number'
+            'group_number' => 'sometimes|string'
         ]);
 
         $user = User::find($request->user_id);
@@ -125,11 +129,14 @@ class UserController extends Controller
 
         if ($request->has('group_number')) {
             if ($user->hasRole('student')) {
-                $group = Group::where('group_number', $request->group_number)->first();
+                $group = Group::firstOrCreate(['group_number' => $request->group_number],
+                    ['group_number' => $request->group_number]);
                 $user->group_id = $group->id;
                 $user->save();
             }
-            else return response()->json(['message' => 'Roles for that user was updated. But group was not added'], 200);
+            else return response()->json([
+                'message' => 'Roles for that user was updated. But group was not added, because user is not a student'
+            ], 200);
         }
 
         return response()->json(['message' => 'Roles for that user was updated'], 200);

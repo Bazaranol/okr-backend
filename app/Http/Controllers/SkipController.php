@@ -13,7 +13,7 @@ use SplTempFileObject;
 class SkipController extends Controller
 {
     public function index(Request $request) {
-        if (!auth()->user()->hasRole(['admin', 'dean'])) {
+        if (!auth()->user()->hasRole(['admin', 'dean', 'teacher'])) {
             return response()->json(['message' => 'Access is forbidden.'], 403);
         }
 
@@ -73,11 +73,14 @@ class SkipController extends Controller
             }
         }
 
+        $reason = $request->has('reason') ?? null;
+
         $skip = Skip::create([
             'user_id' => Auth::user()->id,
             'start_date' => Carbon::createFromFormat('d.m.Y', $request->start_date)->format('Y-m-d'),
             'end_date' => Carbon::createFromFormat('d.m.Y', $request->end_date)->format('Y-m-d'),
             'document_paths' => $documentPaths,
+            'reason' => $reason,
         ]);
 
         return response()->json(['message' => 'Skip was created!', 'data' => $skip], 201);
@@ -92,6 +95,7 @@ class SkipController extends Controller
             'new_end_date' => 'nullable|date|date_format:d.m.Y|after:today',
             'documents' => 'nullable|array',
             'documents.*' => 'file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:2048',
+            'reason' => 'nullable|string',
         ]);
 
         $documentPaths = $skip->document_paths ?? [];
@@ -101,11 +105,14 @@ class SkipController extends Controller
             }
         }
 
+        $reason  = $request->has('reason') ?? null;
+
         $skip->update([
             'end_date' => $request->new_end_date ? Carbon::createFromFormat('d.m.Y', $request->new_end_date)->format('Y-m-d') : null,
             'status' => 'pending',
             'is_extended' => true,
-            'document_paths' => $documentPaths
+            'document_paths' => $documentPaths,
+            'reason' => $reason,
         ]);
 
         return response()->json([
@@ -132,7 +139,7 @@ class SkipController extends Controller
         $skips = Skip::with('user')->get();
 
         $csv = Writer::createFromFileObject(new SplTempFileObject());
-        $csv->insertOne(['ID', 'User ID', 'User name', 'From', 'To', 'Document Paths']);
+        $csv->insertOne(['ID', 'User ID', 'User name', 'From', 'To', 'Document Paths', 'Reason']);
 
         foreach ($skips as $skip) {
             $csv->insertOne([
@@ -142,6 +149,7 @@ class SkipController extends Controller
                 $skip->start_date,
                 $skip->end_date,
                 $skip->document_paths,
+                $skip->reason ?? 'Without reason',
             ]);
         }
 
