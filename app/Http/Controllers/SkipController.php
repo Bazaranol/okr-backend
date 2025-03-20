@@ -165,7 +165,7 @@ class SkipController extends Controller
             $csv->insertOne([
                 $skip->id,
                 $skip->user->id,
-                $skip->user->name,
+                $skip->user->fullName,
                 $skip->start_date,
                 $skip->end_date,
                 $skip->document_paths,
