@@ -57,6 +57,10 @@ class SkipController extends Controller
             $query->whereNull('end_date');
         }
 
+        if ($request->has('reason')) {
+            $query->where('reason', 'like', '%' . $request->input('reason') . '%');
+        }
+
         $skips = $query->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
@@ -264,6 +268,10 @@ class SkipController extends Controller
 
         if ($request->has('is_indefinite')) {
             $query->whereNull('end_date');
+        }
+
+        if ($request->has('reason')) {
+            $query->where('reason', 'like', '%' . $request->input('reason') . '%');
         }
 
         $skips = $query->paginate($perPage, ['*'], 'page', $page);
