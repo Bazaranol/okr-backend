@@ -72,8 +72,10 @@ class SkipController extends Controller
                 $documentPaths[] = $file->store('documents', 'public');
             }
         }
-
-        $reason = $request->has('reason') ?? null;
+        $reason = null;
+        if ($request->has('reason')) {
+            $reason = $request->input('reason');
+        }
 
         $skip = Skip::create([
             'user_id' => Auth::user()->id,
