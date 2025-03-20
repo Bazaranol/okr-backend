@@ -18,48 +18,10 @@ class SkipController extends Controller
         }
 
         $query = Skip::with('user');
+        $query = $this->applyFilters($query, $request);
+
         $perPage = $request->input('per_page', 10);
         $page = $request->input('page', 1);
-
-        if ($request->has('student_name')) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->student_name . '%');
-            });
-        }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->has('start_date') || $request->has('end_date')) {
-            if ($request->has('start_date') && $request->has('end_date')) {
-                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
-                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
-
-                $query->where(function ($q) use ($startDate, $endDate) {
-                    $q->whereBetween('start_date', [$startDate, $endDate])
-                        ->orWhereBetween('end_date', [$startDate, $endDate])
-                        ->orWhere(function ($q) use ($startDate, $endDate) {
-                            $q->where('start_date', '<=', $startDate)
-                                ->where('end_date', '>=', $endDate);
-                        });
-                });
-            } elseif ($request->has('start_date')) {
-                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
-                $query->where('start_date', '>=', $startDate);
-            } elseif ($request->has('end_date')) {
-                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
-                $query->where('end_date', '<=', $endDate);
-            }
-        }
-
-        if ($request->has('is_indefinite')) {
-            $query->whereNull('end_date');
-        }
-
-        if ($request->has('reason')) {
-            $query->where('reason', 'like', '%' . $request->input('reason') . '%');
-        }
 
         $skips = $query->paginate($perPage, ['*'], 'page', $page);
 
@@ -186,8 +148,14 @@ class SkipController extends Controller
         return response()->json(['message' => 'Status was updated!', 'data' => $skip], 201);
     }
 
-    public function exportSkipsToCsv() {
-        $skips = Skip::with('user')->get();
+    public function exportSkipsToCsv(Request $request) {
+        if (!auth()->user()->hasRole(['admin', 'dean', 'teacher'])) {
+            return response()->json(['message' => 'Access is forbidden.'], 403);
+        }
+        $query = Skip::with('user');
+        $query = $this->applyFilters($query, $request);
+
+        $skips = $query->get();
 
         $csv = Writer::createFromFileObject(new SplTempFileObject());
         $csv->insertOne(['ID', 'User ID', 'User name', 'From', 'To', 'Document Paths', 'Reason']);
@@ -305,4 +273,50 @@ class SkipController extends Controller
         }
         throw new \Exception("Wrong format of date. Use d.m.Y or Y-m-d.");
     }
+
+    private function applyFilters($query, Request $request)
+    {
+        if ($request->has('student_name')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->student_name . '%');
+            });
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('start_date') || $request->has('end_date')) {
+            if ($request->has('start_date') && $request->has('end_date')) {
+                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
+                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
+
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('start_date', [$startDate, $endDate])
+                        ->orWhereBetween('end_date', [$startDate, $endDate])
+                        ->orWhere(function ($q) use ($startDate, $endDate) {
+                            $q->where('start_date', '<=', $startDate)
+                                ->where('end_date', '>=', $endDate);
+                        });
+                });
+            } elseif ($request->has('start_date')) {
+                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
+                $query->where('start_date', '>=', $startDate);
+            } elseif ($request->has('end_date')) {
+                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
+                $query->where('end_date', '<=', $endDate);
+            }
+        }
+
+        if ($request->has('is_indefinite')) {
+            $query->whereNull('end_date');
+        }
+
+        if ($request->has('reason')) {
+            $query->where('reason', 'like', '%' . $request->input('reason') . '%');
+        }
+
+        return $query;
+    }
+
 }
