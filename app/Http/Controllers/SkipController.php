@@ -18,6 +18,8 @@ class SkipController extends Controller
         }
 
         $query = Skip::with('user');
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
 
         if ($request->has('student_name')) {
             $query->whereHas('user', function ($q) use ($request) {
@@ -55,8 +57,7 @@ class SkipController extends Controller
             $query->whereNull('end_date');
         }
 
-        $perPage = $request->input('per_page', 10);
-        $skips = $query->paginate($perPage);
+        $skips = $query->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
             'data' => $skips->items(),
@@ -231,6 +232,9 @@ class SkipController extends Controller
     public function getMyFilteredSkips(Request $request) {
         $user = Auth::user();
         $query = Skip::with('user')->where('user_id', $user->id);
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -262,8 +266,7 @@ class SkipController extends Controller
             $query->whereNull('end_date');
         }
 
-        $perPage = $request->input('per_page', 10);
-        $skips = $query->paginate($perPage);
+        $skips = $query->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
             'data' => $skips->items(),
