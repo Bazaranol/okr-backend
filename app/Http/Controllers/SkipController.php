@@ -65,27 +65,33 @@ class SkipController extends Controller
         return response()->json(['data' => 'Skip was deleted'], 200);
     }
 
-    public function store(SkipRequest $request){
-        $documentPaths = [];
-        if ($request->hasFile('documents')) {
-            foreach ($request->file('documents') as $file) {
-                $documentPaths[] = $file->store('documents', 'public');
+    public function store(SkipRequest $request)
+    {
+        try {
+            $documentPaths = [];
+            if ($request->hasFile('documents')) {
+                foreach ($request->file('documents') as $file) {
+                    $documentPaths[] = $file->store('documents', 'public');
+                }
             }
-        }
-        $reason = null;
-        if ($request->has('reason')) {
-            $reason = $request->input('reason');
-        }
 
-        $skip = Skip::create([
-            'user_id' => Auth::user()->id,
-            'start_date' => Carbon::createFromFormat('d.m.Y', $request->start_date)->format('Y-m-d'),
-            'end_date' => Carbon::createFromFormat('d.m.Y', $request->end_date)->format('Y-m-d'),
-            'document_paths' => $documentPaths,
-            'reason' => $reason,
-        ]);
+            $reason = null;
+            if ($request->has('reason')) {
+                $reason = $request->input('reason');
+            }
 
-        return response()->json(['message' => 'Skip was created!', 'data' => $skip], 201);
+            $skip = Skip::create([
+                'user_id' => Auth::user()->id,
+                'start_date' => Carbon::createFromFormat('d.m.Y', $request->start_date)->format('Y-m-d'),
+                'end_date' => Carbon::createFromFormat('d.m.Y', $request->end_date)->format('Y-m-d'),
+                'document_paths' => json_encode($documentPaths),
+                'reason' => $reason,
+            ]);
+
+            return response()->json(['message' => 'Skip was created!', 'data' => $skip], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error:', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function extend(Request $request, Skip $skip) {
