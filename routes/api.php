@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [\App\Http\Controllers\SkipController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\SkipController::class, 'store']);
         Route::get('/my', [\App\Http\Controllers\SkipController::class, 'getMySkips']);
+        Route::get('/my-filtered', [\App\Http\Controllers\SkipController::class, 'getMyFilteredSkips']);
 
         Route::get('/{skip}', [\App\Http\Controllers\SkipController::class, 'getByIdSkip']);
         Route::post('/{skip}/status', [\App\Http\Controllers\SkipController::class, 'updateStatus']);

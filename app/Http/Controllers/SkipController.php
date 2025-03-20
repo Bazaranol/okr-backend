@@ -29,13 +29,26 @@ class SkipController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->has('date')) {
-            $date = Carbon::createFromFormat('d.m.Y', $request->date)->format('Y-m-d');
-            $query->where('start_date', '<=', $date)
-                ->where(function ($q) use ($date) {
-                    $q->where('end_date', '>=', $date)
-                        ->orWhereNull('end_date'); // Бессрочные пропуски
+        if ($request->has('start_date') || $request->has('end_date')) {
+            if ($request->has('start_date') && $request->has('end_date')) {
+                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
+                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
+
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('start_date', [$startDate, $endDate])
+                        ->orWhereBetween('end_date', [$startDate, $endDate])
+                        ->orWhere(function ($q) use ($startDate, $endDate) {
+                            $q->where('start_date', '<=', $startDate)
+                                ->where('end_date', '>=', $endDate);
+                        });
                 });
+            } elseif ($request->has('start_date')) {
+                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
+                $query->where('start_date', '>=', $startDate);
+            } elseif ($request->has('end_date')) {
+                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
+                $query->where('end_date', '<=', $endDate);
+            }
         }
 
         if ($request->has('is_indefinite')) {
@@ -112,7 +125,14 @@ class SkipController extends Controller
                     }
                     $fail("Wrong format of date. Use d.m.Y or Y-m-d.");
                 },
-                'after:today',
+                function ($attribute, $value, $fail) {
+                    $newEndDate = Carbon::createFromFormat('d.m.Y', $value);
+                    $today = Carbon::today();
+
+                    if ($newEndDate->lt($today)) {
+                        $fail("The new end date must be today or later.");
+                    }
+                },
             ],
             'documents' => 'nullable|array',
             'documents.*' => 'file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png|max:2048',
@@ -206,6 +226,54 @@ class SkipController extends Controller
     public function getMySkips() {
         $user = Auth::user();
         return response()->json(['data' => $user->skips()->get()], 200);
+    }
+
+    public function getMyFilteredSkips(Request $request) {
+        $user = Auth::user();
+        $query = Skip::with('user')->where('user_id', $user->id);
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('start_date') || $request->has('end_date')) {
+            if ($request->has('start_date') && $request->has('end_date')) {
+                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
+                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
+
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('start_date', [$startDate, $endDate])
+                        ->orWhereBetween('end_date', [$startDate, $endDate])
+                        ->orWhere(function ($q) use ($startDate, $endDate) {
+                            $q->where('start_date', '<=', $startDate)
+                                ->where('end_date', '>=', $endDate);
+                        });
+                });
+            } elseif ($request->has('start_date')) {
+                $startDate = Carbon::createFromFormat('d.m.Y', $request->start_date)->startOfDay();
+                $query->where('start_date', '>=', $startDate);
+            } elseif ($request->has('end_date')) {
+                $endDate = Carbon::createFromFormat('d.m.Y', $request->end_date)->endOfDay();
+                $query->where('end_date', '<=', $endDate);
+            }
+        }
+
+        if ($request->has('is_indefinite')) {
+            $query->whereNull('end_date');
+        }
+
+        $perPage = $request->input('per_page', 10);
+        $skips = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $skips->items(),
+            'pagination' => [
+                'total' => $skips->total(),
+                'per_page' => $skips->perPage(),
+                'current_page' => $skips->currentPage(),
+                'last_page' => $skips->lastPage(),
+            ],
+        ]);
     }
 
     /**

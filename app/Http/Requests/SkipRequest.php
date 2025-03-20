@@ -48,7 +48,14 @@ class SkipRequest extends FormRequest
                     }
                     $fail("Wrong format of date. Use d.m.Y or Y-m-d.");
                 },
-                'after:start_date',
+                function ($attribute, $value, $fail) {
+                    $startDate = Carbon::createFromFormat('d.m.Y', $this->start_date);
+                    $endDate = Carbon::createFromFormat('d.m.Y', $value);
+
+                    if ($endDate->lt($startDate)) {
+                        $fail("The end date must be after or equal to the start date.");
+                    }
+                },
             ],
             'documents' => 'nullable|array',
             'documents.*' => 'file|mimetypes:text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png|max:2048',
@@ -62,7 +69,6 @@ class SkipRequest extends FormRequest
             'start_date.date' => 'Поле "Дата начала" должно быть датой.',
             'end_date.required' => 'Поле "Дата окончания" обязательно для заполнения.',
             'end_date.date' => 'Поле "Дата окончания" должно быть датой.',
-            'end_date.after' => 'Поле "Дата окончания" должно быть после даты начала.',
             'documents.array' => 'Поле "Документы" должно быть массивом файлов.',
             'documents.*.file' => 'Поле "Документ" должно быть файлом.',
             'documents.*.mimetypes' => 'Файл должен быть одного из типов: text/plain, PDF, DOC, DOCX, JPEG, PNG.',
