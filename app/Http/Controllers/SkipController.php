@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SkipRequest;
+use App\Models\Group;
 use App\Models\Skip;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -297,6 +298,19 @@ class SkipController extends Controller
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
+        }
+        if ($request->has('group_number')) {
+            $groupNumber = $request->group_number;
+            $group = Group::where('group_number', $groupNumber)->first();
+
+            if ($group) {
+                $query->whereHas('user', function ($q) use ($group) {
+                   $q->where('group_id', $group->id);
+                });
+            }
+//            else {
+//                $query->where('id', '=', '-1');
+//            }
         }
 
         if ($request->has('start_date') || $request->has('end_date')) {
