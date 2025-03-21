@@ -291,7 +291,7 @@ class SkipController extends Controller
     {
         if ($request->has('student_name')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->student_name . '%');
+                $q->where('fullName', 'like', '%' . $request->student_name . '%');
             });
         }
 
